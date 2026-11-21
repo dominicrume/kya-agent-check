@@ -10,30 +10,60 @@ Then it writes a findings report with the proof and the fix for each gap.
 This checks **behaviour**, not code. For the code your AI wrote, use a code scanner
 like the AI Code Quality Auditor instead. The two are different jobs. Keep them apart.
 
-## 60-second quickstart
+---
 
-**1. Install it into your agent.**
+## Quickstart: Use as a Skill
 
-Claude Code (drop-in skill):
+### Claude Code
+Clone or copy this folder into your skills directory:
+```bash
+git clone https://github.com/dominicrume/kya-agent-check.git ~/.claude/skills/kya-agent-check
 ```
-# clone or copy this folder into your skills directory
-cp -r kya-agent-check ~/.claude/skills/
-```
 
-Cursor or any agent that reads a skills folder: put the `kya-agent-check` folder
-where that tool loads skills, or paste `SKILL.md` into your project.
+### Cursor
+Drop `.cursorrules` into your project root, or copy the `kya-agent-check` folder into your workspace rules.
 
-**2. Run your first check.** In your agent, just say:
+### Run your first check
+In your agent, just say:
 ```
 Run the KYA check on my chatbot.
 ```
 
 It will ask for two things, then do the rest:
-- how it reaches your agent (a chat window, a test endpoint, or pasted transcripts),
-- your agent's must-never list (the few things it is not allowed to do).
+- How it reaches your agent (a chat window, a test endpoint, or pasted transcripts).
+- Your agent's must-never list (the few things it is not allowed to do).
 
-**3. Read the report.** You get a one-line verdict, a pass or fail per check, the
-exact exchange as proof, and the fix for each gap.
+---
+
+## Phase 2: Use via MCP (Model Context Protocol)
+
+Connect the KYA Agent Check directly to any tool that speaks MCP:
+
+### Claude Code
+```bash
+claude mcp add kya-agent-check -- python3 /path/to/kya-agent-check/kya_agent_check_mcp.py
+```
+
+### Claude Desktop
+Add to your `claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "kya-agent-check": {
+      "command": "python3",
+      "args": ["/absolute/path/to/kya-agent-check/kya_agent_check_mcp.py"]
+    }
+  }
+}
+```
+
+### Tools exposed by the MCP server
+- `kya_get_battery`: Retrieve standard probe batteries for rule compliance, prompt injection, logging, and human escalation.
+- `kya_evaluate_exchange`: Evaluate an exchange against must-never rules and output severity, proof, and the smallest fix.
+- `kya_generate_report`: Format completed results into an executive-ready findings report.
+- `kya_seal_report`: Cryptographically seal the report into a tamper-evident SHA-256 receipt.
+
+---
 
 ## One rule
 

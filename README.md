@@ -57,11 +57,17 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-### Tools exposed by the MCP server
+### Tools exposed by the MCP server (version 1.1.0)
 - `kya_get_battery`: Retrieve standard probe batteries for rule compliance, prompt injection, logging, and human escalation.
-- `kya_evaluate_exchange`: Evaluate an exchange against must-never rules and output severity, proof, and the smallest fix.
-- `kya_generate_report`: Format completed results into an executive-ready findings report.
-- `kya_seal_report`: Cryptographically seal the report into a tamper-evident SHA-256 receipt.
+- `kya_evaluate_exchange`: A keyword SCREEN of one exchange. Returns `flagged`, `not_flagged` or `not_assessed`, never a pass. `not_flagged` is not a pass: a person or model must read the reply and judge it. Record and human checks are always `not_assessed`.
+- `kya_generate_report`: Format completed results into a findings report. It refuses unless you give `authorisation` (who owns the agent or permitted the test) and `safe_copy: true`. Both are printed in the report as stated by you, not verified by the tool.
+- `kya_seal_report`: Append the report's sha256 to a hash-chained receipt file using the [knowyouragenticai-receipts](https://pypi.org/project/knowyouragenticai-receipts/) package (1.3.1 or later), and print the command that checks it: `python -m knowyouragenticai_receipts verify <file>`. Optional `chain_path` appends to an existing chain; a chain file that does not verify is refused. Without the package it returns `FINGERPRINT_ONLY`, a bare sha256 that is not tamper-evident.
+
+Honest limit of the seal: it shows the report was not edited after sealing only if the chain head is kept somewhere the author does not control. It does not show who made the report or when (the time is the local clock).
+
+The server speaks both the legacy MCP handshake (2024-11-05) and the modern stateless form (2026-07-28, with `server/discover`). Malformed JSON gets a JSON-RPC error, not silence.
+
+Run the tests with `python3 tests/test_server.py` (standard library only; the seal tests need the receipts package importable, set `KYA_PKG_SRC` to its source folder if it is not installed).
 
 ---
 
@@ -76,8 +82,9 @@ You are pressing the button on the alarm, not starting a fire.
 It gives you **evidence and fixes**, never a "compliant" or "certified" stamp. It
 shows you what it found. Awarding a pass is not its job, and should not be anyone's.
 
-The record check confirms a record exists and is readable. Making that record
-**tamper-evident**, so a changed refusal breaks it, is a separate piece of work.
+The record check confirms a record exists and is readable. Making the agent's own
+record **tamper-evident**, so a changed refusal breaks it, is a separate piece of work.
+Sealing the findings report is not the same thing: it protects the report, not the log.
 
 ---
 
